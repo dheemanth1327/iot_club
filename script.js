@@ -15,95 +15,246 @@ function goToVerify(){
     window.location.href = "verify.html";
 }
 
-// ================= VERIFY CERTIFICATE =================
-async function verifyCertificate(){
+// ================= LOGIN =================
+function openLogin(){
+    const modal = document.getElementById("loginModal");
+    if(modal) modal.style.display = "flex";
+}
 
-    const name = document.getElementById("verifyName").value.trim().toLowerCase();
-    const id = document.getElementById("verifyId").value.trim().toLowerCase();
-    const result = document.getElementById("verifyResult");
+function closeLogin(){
+    const modal = document.getElementById("loginModal");
+    if(modal) modal.style.display = "none";
+}
 
-    if(!name || !id){
-        result.innerHTML = `
-        <div class="result-card error">
-            <h3>⚠ Enter all fields</h3>
-        </div>`;
+function login(){
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    const adminUser = "admin";
+    const adminPass = "iotify123";
+
+    if(username === adminUser && password === adminPass){
+        localStorage.setItem("isAdmin", "true");
+        window.location.href = "admin.html";
+    }else{
+        alert("❌ Invalid Login");
+    }
+}
+
+// ================= ADMIN AUTH =================
+if(window.location.pathname.includes("admin.html")){
+    if(localStorage.getItem("isAdmin") !== "true"){
+        window.location.href = "index.html";
+    }
+}
+
+function logout(){
+    localStorage.removeItem("isAdmin");
+    window.location.href = "index.html";
+}
+
+// ================= MEMBER STORAGE =================
+function getMembers(){
+    return JSON.parse(localStorage.getItem("members")) || [];
+}
+
+function saveMembers(data){
+    localStorage.setItem("members", JSON.stringify(data));
+}
+
+// ================= ADD MEMBER =================
+function addMember(){
+
+    const member = {
+        Name: document.getElementById("name").value,
+        ID: document.getElementById("id").value,
+        Event: document.getElementById("event").value,
+        Date: document.getElementById("date").value,
+        Link: document.getElementById("link").value
+    };
+
+    if(!member.Name || !member.ID){
+        alert("⚠ Fill required fields");
         return;
     }
 
-    // ✅ CORRECT SHEET API (GITHUB SAFE)
-    const url = "https://opensheet.elk.sh/188kV2CseK37tFy5R1tUYm6AZjL9k1Y71i64Jqra1dFQ/Sheet1";
+    let members = getMembers();
+    members.push(member);
+    saveMembers(members);
 
-    result.innerHTML = `<h3 style="color:#00f7ff;">Checking...</h3>`;
+    alert("✅ Member Added");
+    loadMembers();
+}
 
-    try{
-        const res = await fetch(url, {
-            method: "GET",
-            mode: "cors"
-        });
+// ================= LOAD MEMBERS =================
+function loadMembers(){
 
-        const data = await res.json();
+    const list = document.getElementById("memberList");
+    if(!list) return;
 
-        console.log("DATA:", data);
+    let members = getMembers();
+    list.innerHTML = "";
 
-        let foundUser = null;
+    members.forEach((m, index) => {
+        list.innerHTML += `
+            <div class="card">
+                <p><b>${m.Name}</b></p>
+                <p>ID: ${m.ID}</p>
+                <p>${m.Event}</p>
+                <button onclick="deleteMember(${index})">Delete</button>
+            </div>
+        `;
+    });
+}
 
-        for(let i = 0; i < data.length; i++){
+// ================= DELETE MEMBER =================
+function deleteMember(index){
+    let members = getMembers();
+    members.splice(index,1);
+    saveMembers(members);
+    loadMembers();
+}
 
-            const sheetName = String(data[i].Name || "").trim().toLowerCase();
+// ================= VERIFY CERTIFICATE =================
+async function verifyCertificate(){
 
-            // 🔥 Handles BOTH "ID" and "ID " (space issue)
-            const sheetId = String(
-                data[i].ID || data[i]["ID "] || ""
-            ).trim().toLowerCase();
+    const nameInput = document.getElementById("verifyName");
+    const idInput = document.getElementById("verifyId");
 
-            console.log("Checking:", sheetName, sheetId);
+    if(!nameInput || !idInput) return;
 
-            if(sheetName === name && sheetId === id){
-                foundUser = data[i];
-                break;
+    const name = nameInput.value.trim().toLowerCase();
+    const id = idInput.value.trim().toLowerCase();
+
+    if(!name || !id){
+        alert("⚠ Enter all fields");
+        return;
+    }
+
+    let foundUser = null;
+
+    // 🔹 STEP 1: CHECK LOCAL STORAGE (ADMIN DATA)
+    const localData = getMembers();
+
+    for(let i=0;i<localData.length;i++){
+        const sheetName = String(localData[i].Name || "").toLowerCase();
+        const sheetId = String(localData[i].ID || "").toLowerCase();
+
+        if(sheetName === name && sheetId === id){
+            foundUser = localData[i];
+            break;
+        }
+    }
+
+    // 🔹 STEP 2: IF NOT FOUND → CHECK GOOGLE SHEET
+    if(!foundUser){
+        const url = "https://opensheet.elk.sh/188kV2CseK37tFy5R1tUYm6AZjL9k1Y71i64Jqra1dFQ/Sheet1";
+
+        try{
+            const res = await fetch(url);
+            const data = await res.json();
+
+            for(let i = 0; i < data.length; i++){
+
+                const sheetName = String(data[i].Name || "").trim().toLowerCase();
+                const sheetId = String(
+                    data[i].ID || data[i]["ID "] || ""
+                ).trim().toLowerCase();
+
+                if(sheetName === name && sheetId === id){
+                    foundUser = data[i];
+                    break;
+                }
             }
+
+        }catch(err){
+            console.error(err);
+        }
+    }
+
+    // 🔹 FINAL RESULT
+    if(foundUser){
+
+        let certLink = String(foundUser.Link || "").trim();
+
+        if(certLink.includes("drive.google.com")){
+            certLink = certLink.replace("/view", "/preview");
         }
 
-        if(foundUser){
+        const finalData = {
+            Name: foundUser.Name,
+            ID: foundUser.ID || foundUser["ID "],
+            Event: foundUser.Event || "N/A",
+            Date: foundUser.Date || "N/A",
+            Link: certLink
+        };
 
-            let certLink = String(foundUser.Link || "").trim();
+        localStorage.setItem("certData", JSON.stringify(finalData));
+        window.location.href = "result.html";
 
-            // ✅ Fix Google Drive preview
-            if(certLink.includes("drive.google.com")){
-                certLink = certLink.replace("/view", "/preview");
-            }
-
-            result.innerHTML = `
-            <div class="result-card success">
-                <h3>✅ Certificate Verified</h3>
-                <p><strong>${foundUser.Name}</strong></p>
-                <p>ID: ${foundUser.ID || foundUser["ID "]}</p>
-                <iframe src="${certLink}" width="100%" height="300"></iframe>
-            </div>`;
-
-        }else{
-            result.innerHTML = `
-            <div class="result-card error">
-                <h3>❌ Not Verified</h3>
-            </div>`;
-        }
-
-    }catch(err){
-        console.error("ERROR:", err);
-
-        result.innerHTML = `
-        <div class="result-card error">
-            <h3>⚠ Error fetching data</h3>
-        </div>`;
+    }else{
+        alert("❌ Not Verified");
     }
 }
 
-// ================= QR =================
+// ================= QR SCANNER =================
+let qrScanner;
+
 function scanQR(){
-    alert("QR Scanner coming next 🚀");
+
+    const qrBox = document.getElementById("qr-reader");
+    if(!qrBox) return;
+
+    qrBox.style.display = "block";
+
+    if(qrScanner){
+        qrScanner.clear();
+    }
+
+    qrScanner = new Html5Qrcode("qr-reader");
+
+    Html5Qrcode.getCameras().then(devices => {
+
+        if(devices && devices.length){
+
+            qrScanner.start(
+                devices[0].id,
+                { fps: 10, qrbox: 250 },
+
+                qrMessage => {
+
+                    const parts = qrMessage.split(",");
+
+                    let name = "";
+                    let id = "";
+
+                    parts.forEach(p => {
+                        if(p.includes("name:")){
+                            name = p.split("name:")[1];
+                        }
+                        if(p.includes("id:")){
+                            id = p.split("id:")[1];
+                        }
+                    });
+
+                    document.getElementById("verifyName").value = name;
+                    document.getElementById("verifyId").value = id;
+
+                    qrScanner.stop();
+                    qrBox.style.display = "none";
+
+                    verifyCertificate();
+                }
+            );
+        }
+
+    }).catch(err=>{
+        console.error(err);
+        alert("Camera not accessible");
+    });
 }
 
-// ================= TYPING =================
+// ================= TYPING EFFECT =================
 let text = "IOTIFY";
 let i = 0;
 
@@ -169,4 +320,6 @@ window.onload = function(){
 
         draw();
     }
+
+    loadMembers();
 };

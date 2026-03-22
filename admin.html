@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<nav>
+    <h1>Admin Panel</h1>
+    <button onclick="logout()">Logout</button>
+</nav>
+
+<section class="section">
+
+    <h2>Add Member</h2>
+
+    <input id="name" placeholder="Name"><br>
+    <input id="id" placeholder="ID"><br>
+    <input id="event" placeholder="Event"><br>
+    <input id="date" placeholder="Date"><br>
+    <input id="link" placeholder="Certificate Link"><br>
+
+    <button onclick="addMember()">Add</button>
+
+    <h2 style="margin-top:40px;">Members</h2>
+
+    <div id="memberList"></div>
+
+</section>
+
+<script src="script.js"></script>
+
+</body>
+</html>

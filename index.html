@@ -13,20 +13,24 @@
 
 <canvas id="bg"></canvas>
 
+<!-- NAVBAR -->
 <nav>
     <h1>IOTIFY</h1>
-    <button onclick="goToVerify()">Verify Certificate</button>
+    <button class="login-btn" onclick="openLogin()">Login</button>
 </nav>
 
+<!-- HERO -->
 <section class="hero">
     <h1 id="typing"></h1>
     <p>Innovating with IoT & Embedded Systems</p>
 
-    <div>
+    <div class="hero-buttons">
         <button onclick="goToEvents()">Explore</button>
+        <button class="verify-btn" onclick="goToVerify()">Verify Certificate</button>
     </div>
 </section>
 
+<!-- DOMAINS -->
 <section class="section">
     <h2>Our Domains</h2>
     <div class="cards">
@@ -38,6 +42,27 @@
 </section>
 
 <footer>Built with Innovation</footer>
+
+<!-- LOGIN MODAL -->
+<div id="loginModal" class="modal">
+
+    <div class="modal-content">
+
+        <!-- CLOSE BUTTON -->
+        <span class="close-btn" onclick="closeLogin()">✖</span>
+
+        <h2>Admin Login</h2>
+
+        <!-- INPUTS -->
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+
+        <!-- LOGIN BUTTON -->
+        <button onclick="login()">Login</button>
+
+    </div>
+
+</div>
 
 <script src="script.js"></script>
 </body>
