@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verify Certificate</title>
+
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<canvas id="bg"></canvas>
+
+<nav>
+    <h1>IOTIFY</h1>
+    <button onclick="goHome()">Home</button>
+</nav>
+
+<section class="section">
+
+    <h2>Verify Certificate</h2>
+
+    <div class="verify-box">
+
+        <input type="text" id="verifyName" placeholder="Enter Name">
+        <input type="text" id="verifyId" placeholder="Enter ID">
+
+        <button onclick="verifyCertificate()">Submit</button>
+
+        <p style="margin:10px 0;">OR</p>
+
+        <button onclick="scanQR()">📷 Scan QR</button>
+
+        <div id="verifyResult"></div>
+
+    </div>
+
+</section>
+
+<script src="script.js"></script>
+</body>
+</html>
