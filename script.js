@@ -27,13 +27,10 @@ function closeLogin(){
 }
 
 function login(){
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
+    const username = document.getElementById("adminUser")?.value;
+    const password = document.getElementById("adminPass")?.value;
 
-    const adminUser = "admin";
-    const adminPass = "iotify123";
-
-    if(username === adminUser && password === adminPass){
+    if(username === "admin" && password === "iotify123"){
         localStorage.setItem("isAdmin", "true");
         window.location.href = "admin.html";
     }else{
@@ -133,7 +130,7 @@ async function verifyCertificate(){
 
     let foundUser = null;
 
-    // 🔹 STEP 1: CHECK LOCAL STORAGE (ADMIN DATA)
+    // 🔹 LOCAL STORAGE CHECK
     const localData = getMembers();
 
     for(let i=0;i<localData.length;i++){
@@ -146,7 +143,7 @@ async function verifyCertificate(){
         }
     }
 
-    // 🔹 STEP 2: IF NOT FOUND → CHECK GOOGLE SHEET
+    // 🔹 GOOGLE SHEET CHECK
     if(!foundUser){
         const url = "https://opensheet.elk.sh/188kV2CseK37tFy5R1tUYm6AZjL9k1Y71i64Jqra1dFQ/Sheet1";
 
@@ -155,18 +152,14 @@ async function verifyCertificate(){
             const data = await res.json();
 
             for(let i = 0; i < data.length; i++){
-
                 const sheetName = String(data[i].Name || "").trim().toLowerCase();
-                const sheetId = String(
-                    data[i].ID || data[i]["ID "] || ""
-                ).trim().toLowerCase();
+                const sheetId = String(data[i].ID || data[i]["ID "] || "").trim().toLowerCase();
 
                 if(sheetName === name && sheetId === id){
                     foundUser = data[i];
                     break;
                 }
             }
-
         }catch(err){
             console.error(err);
         }
@@ -197,7 +190,7 @@ async function verifyCertificate(){
     }
 }
 
-// ================= QR SCANNER =================
+// ================= QR SCANNER (MERGED LOGIC) =================
 let qrScanner;
 
 function scanQR(){
@@ -223,33 +216,61 @@ function scanQR(){
 
                 qrMessage => {
 
-                    const parts = qrMessage.split(",");
+                    console.log("QR:", qrMessage);
 
-                    let name = "";
-                    let id = "";
+                    // ✅ CASE 1: QR contains URL → redirect directly
+                    if(qrMessage.includes("http")){
+                        window.location.href = qrMessage;
+                        return;
+                    }
 
-                    parts.forEach(p => {
-                        if(p.includes("name:")){
-                            name = p.split("name:")[1];
+                    // ✅ CASE 2: BASE64 ENCODED (name|id)
+                    try{
+                        const decoded = atob(qrMessage);
+                        if(decoded.includes("|")){
+                            const [name, id] = decoded.split("|");
+
+                            document.getElementById("verifyName").value = name;
+                            document.getElementById("verifyId").value = id;
+
+                            qrScanner.stop();
+                            qrBox.style.display = "none";
+
+                            verifyCertificate();
+                            return;
                         }
-                        if(p.includes("id:")){
-                            id = p.split("id:")[1];
+                    }catch(e){}
+
+                    // ✅ CASE 3: CUSTOM FORMAT (name:xxx,id:xxx)
+                    try{
+                        const parts = qrMessage.split(",");
+
+                        let name = "";
+                        let id = "";
+
+                        parts.forEach(p => {
+                            if(p.includes("name:")) name = p.split("name:")[1];
+                            if(p.includes("id:")) id = p.split("id:")[1];
+                        });
+
+                        if(name && id){
+                            document.getElementById("verifyName").value = name;
+                            document.getElementById("verifyId").value = id;
+
+                            qrScanner.stop();
+                            qrBox.style.display = "none";
+
+                            verifyCertificate();
+                            return;
                         }
-                    });
+                    }catch(e){}
 
-                    document.getElementById("verifyName").value = name;
-                    document.getElementById("verifyId").value = id;
-
-                    qrScanner.stop();
-                    qrBox.style.display = "none";
-
-                    verifyCertificate();
+                    alert("❌ Invalid QR");
                 }
             );
         }
 
-    }).catch(err=>{
-        console.error(err);
+    }).catch(()=>{
         alert("Camera not accessible");
     });
 }

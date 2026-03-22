@@ -16,28 +16,86 @@
 </nav>
 
 <section class="section">
-
     <h2 class="verify-title">Certificate Details</h2>
-
     <div class="result-box" id="resultBox"></div>
-
 </section>
 
 <script src="script.js"></script>
 
 <script>
-window.onload = function(){
-
-    const data = JSON.parse(localStorage.getItem("certData"));
+window.onload = async function(){
 
     const box = document.getElementById("resultBox");
 
-    if(!data){
-        box.innerHTML = "<h3>❌ No Data Found</h3>";
+    // ================= CASE 1: DATA FROM QR (URL PARAM) =================
+    const params = new URLSearchParams(window.location.search);
+    const encoded = params.get("data");
+
+    if(encoded){
+        let decoded;
+
+        try{
+            decoded = atob(encoded);
+        }catch{
+            box.innerHTML = "<h3>❌ Invalid QR</h3>";
+            return;
+        }
+
+        const parts = decoded.split("|");
+        const name = parts[0]?.toLowerCase();
+        const id = parts[1]?.toLowerCase();
+
+        if(!name || !id){
+            box.innerHTML = "<h3>❌ Invalid QR</h3>";
+            return;
+        }
+
+        // 🔥 Fetch from Google Sheet
+        const url = "https://opensheet.elk.sh/188kV2CseK37tFy5R1tUYm6AZjL9k1Y71i64Jqra1dFQ/Sheet1";
+
+        try{
+            const res = await fetch(url);
+            const data = await res.json();
+
+            let user = data.find(r =>
+                String(r.Name || "").trim().toLowerCase() === name &&
+                String(r.ID || r["ID "] || "").trim().toLowerCase() === id
+            );
+
+            if(!user){
+                box.innerHTML = "<h3>❌ Not Verified</h3>";
+                return;
+            }
+
+            renderResult(user);
+
+        }catch(err){
+            console.error(err);
+            box.innerHTML = "<h3>⚠ Error fetching data</h3>";
+        }
+
         return;
     }
 
-    let certLink = data.Link;
+    // ================= CASE 2: DATA FROM LOCAL STORAGE =================
+    const data = JSON.parse(localStorage.getItem("certData"));
+
+    if(data){
+        renderResult(data);
+        return;
+    }
+
+    // ================= NO DATA =================
+    box.innerHTML = "<h3>❌ No Data Found</h3>";
+};
+
+
+// ================= RENDER FUNCTION =================
+function renderResult(user){
+
+    const box = document.getElementById("resultBox");
+
+    let certLink = String(user.Link || "").trim();
 
     if(certLink.includes("drive.google.com")){
         certLink = certLink.replace("/view","/preview");
@@ -48,19 +106,19 @@ window.onload = function(){
 
         <span class="verified-badge">✔ VERIFIED</span>
 
-        <h2>${data.Name}</h2>
-        <p>ID: ${data.ID || data["ID "]}</p>
+        <h2>${user.Name}</h2>
+        <p>ID: ${user.ID || user["ID "]}</p>
 
         <div class="event-box">
-            <p><strong>Event:</strong> ${data.Event}</p>
-            <p><strong>Date:</strong> ${data.Date}</p>
+            <p><strong>Event:</strong> ${user.Event || "N/A"}</p>
+            <p><strong>Date:</strong> ${user.Date || "N/A"}</p>
         </div>
 
         <iframe src="${certLink}" width="100%" height="400"></iframe>
 
     </div>`;
-};
+}
 </script>
 
 </body>
-</html> 
+</html>
