@@ -33,7 +33,6 @@ async function verifyCertificate(){
         return;
     }
 
-    // ✅ CORRECT URL (IMPORTANT)
     const url = "https://opensheet.elk.sh/188kV2CseK37tFy5R1tUYm6AZjL9k1Y71i64Jqra1dFQ/Sheet1";
 
     result.innerHTML = `<h3 style="color:#00f7ff;">Checking...</h3>`;
@@ -42,18 +41,20 @@ async function verifyCertificate(){
         const res = await fetch(url);
         const data = await res.json();
 
-        console.log("===== FULL DATA =====");
-        console.log(data);
+        console.log("===== SHEET DATA =====", data);
 
         let foundUser = null;
 
-        for(let i=0; i<data.length; i++){
+        for(let i = 0; i < data.length; i++){
 
             const sheetName = String(data[i].Name || "").trim().toLowerCase();
-            const sheetId = String(data[i].ID || "").trim().toLowerCase();
 
-            console.log("Checking row:", sheetName, sheetId);
-            console.log("User input:", name, id);
+            // 🔥 FIX: handles "ID" and "ID " (with space)
+            const sheetId = String(
+                data[i].ID || data[i]["ID "] || ""
+            ).trim().toLowerCase();
+
+            console.log("Checking:", sheetName, sheetId);
 
             if(sheetName === name && sheetId === id){
                 foundUser = data[i];
@@ -65,7 +66,7 @@ async function verifyCertificate(){
 
             let certLink = String(foundUser.Link || "").trim();
 
-            // ✅ Fix Google Drive preview
+            // 🔥 Fix Google Drive preview automatically
             if(certLink.includes("drive.google.com")){
                 certLink = certLink.replace("/view", "/preview");
             }
@@ -74,7 +75,7 @@ async function verifyCertificate(){
             <div class="result-card success">
                 <h3>✅ Certificate Verified</h3>
                 <p><strong>${foundUser.Name}</strong></p>
-                <p>ID: ${foundUser.ID}</p>
+                <p>ID: ${foundUser.ID || foundUser["ID "]}</p>
                 <iframe src="${certLink}" width="100%" height="300"></iframe>
             </div>`;
 
@@ -115,10 +116,11 @@ function typing(){
     }
 }
 
+// ================= PARTICLES =================
 window.onload = function(){
+
     typing();
 
-    // ================= PARTICLES =================
     const canvas = document.getElementById("bg");
 
     if(canvas){
