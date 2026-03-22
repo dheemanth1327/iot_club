@@ -18,12 +18,9 @@ function goToVerify(){
 // ================= VERIFY CERTIFICATE =================
 async function verifyCertificate(){
 
-    const nameInput = document.getElementById("verifyName");
-    const idInput = document.getElementById("verifyId");
+    const name = document.getElementById("verifyName").value.trim().toLowerCase();
+    const id = document.getElementById("verifyId").value.trim().toLowerCase();
     const result = document.getElementById("verifyResult");
-
-    const name = nameInput.value.trim().toLowerCase();
-    const id = idInput.value.trim().toLowerCase();
 
     if(!name || !id){
         result.innerHTML = `
@@ -33,15 +30,20 @@ async function verifyCertificate(){
         return;
     }
 
+    // ✅ CORRECT SHEET API (GITHUB SAFE)
     const url = "https://opensheet.elk.sh/188kV2CseK37tFy5R1tUYm6AZjL9k1Y71i64Jqra1dFQ/Sheet1";
 
     result.innerHTML = `<h3 style="color:#00f7ff;">Checking...</h3>`;
 
     try{
-        const res = await fetch(url);
+        const res = await fetch(url, {
+            method: "GET",
+            mode: "cors"
+        });
+
         const data = await res.json();
 
-        console.log("===== SHEET DATA =====", data);
+        console.log("DATA:", data);
 
         let foundUser = null;
 
@@ -49,7 +51,7 @@ async function verifyCertificate(){
 
             const sheetName = String(data[i].Name || "").trim().toLowerCase();
 
-            // 🔥 FIX: handles "ID" and "ID " (with space)
+            // 🔥 Handles BOTH "ID" and "ID " (space issue)
             const sheetId = String(
                 data[i].ID || data[i]["ID "] || ""
             ).trim().toLowerCase();
@@ -66,7 +68,7 @@ async function verifyCertificate(){
 
             let certLink = String(foundUser.Link || "").trim();
 
-            // 🔥 Fix Google Drive preview automatically
+            // ✅ Fix Google Drive preview
             if(certLink.includes("drive.google.com")){
                 certLink = certLink.replace("/view", "/preview");
             }
@@ -80,7 +82,6 @@ async function verifyCertificate(){
             </div>`;
 
         }else{
-
             result.innerHTML = `
             <div class="result-card error">
                 <h3>❌ Not Verified</h3>
