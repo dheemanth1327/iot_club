@@ -27,82 +27,76 @@ window.onload = async function(){
 
     const box = document.getElementById("resultBox");
 
-    // ================= CASE 1: DATA FROM QR (URL PARAM) =================
+    // ================= CHECK LOCAL DATA =================
+    const localData = JSON.parse(localStorage.getItem("certData"));
+
+    if(localData){
+
+        // ❌ INVALID CASE
+        if(localData.status === "invalid"){
+            showInvalid();
+            return;
+        }
+
+        // ✅ VALID CASE
+        renderResult(localData);
+        return;
+    }
+
+    // ================= QR FLOW =================
     const params = new URLSearchParams(window.location.search);
     const encoded = params.get("data");
 
-    if(encoded){
-        let decoded;
-
-        try{
-            decoded = atob(encoded);
-        }catch{
-            box.innerHTML = "<h3>❌ Invalid QR</h3>";
-            return;
-        }
-
-        const parts = decoded.split("|");
-        const name = parts[0]?.toLowerCase();
-        const id = parts[1]?.toLowerCase();
-
-        if(!name || !id){
-            box.innerHTML = "<h3>❌ Invalid QR</h3>";
-            return;
-        }
-
-        // 🔥 Fetch from Google Sheet
-        const url = "https://opensheet.elk.sh/188kV2CseK37tFy5R1tUYm6AZjL9k1Y71i64Jqra1dFQ/Sheet1";
-
-        try{
-            const res = await fetch(url);
-            const data = await res.json();
-
-            let user = data.find(r =>
-                String(r.Name || "").trim().toLowerCase() === name &&
-                String(r.ID || r["ID "] || "").trim().toLowerCase() === id
-            );
-
-            if(!user){
-                box.innerHTML = "<h3>❌ Not Verified</h3>";
-                return;
-            }
-
-            renderResult(user);
-
-        }catch(err){
-            console.error(err);
-            box.innerHTML = "<h3>⚠ Error fetching data</h3>";
-        }
-
+    if(!encoded){
+        showInvalid();
         return;
     }
 
-    // ================= CASE 2: DATA FROM LOCAL STORAGE =================
-    const data = JSON.parse(localStorage.getItem("certData"));
+    let decoded;
 
-    if(data){
-        renderResult(data);
+    try{
+        decoded = atob(encoded);
+    }catch{
+        showInvalid();
         return;
     }
 
-    // ================= NO DATA =================
-    box.innerHTML = "<h3>❌ No Data Found</h3>";
+    const [name,id] = decoded.split("|");
+
+    const url = "https://opensheet.elk.sh/188kV2CseK37tFy5R1tUYm6AZjL9k1Y71i64Jqra1dFQ/Sheet1";
+
+    try{
+        const res = await fetch(url);
+        const data = await res.json();
+
+        const user = data.find(r =>
+            String(r.Name || "").toLowerCase() === name.toLowerCase() &&
+            String(r.ID || r["ID "] || "").toLowerCase() === id.toLowerCase()
+        );
+
+        if(!user){
+            showInvalid();
+            return;
+        }
+
+        renderResult(user);
+
+    }catch{
+        showInvalid();
+    }
 };
 
-
-// ================= RENDER FUNCTION =================
+// ================= VALID UI =================
 function renderResult(user){
 
-    const box = document.getElementById("resultBox");
+    let certLink = user.Link;
 
-    let certLink = String(user.Link || "").trim();
-
-    if(certLink.includes("drive.google.com")){
+    if(certLink.includes("drive")){
         certLink = certLink.replace("/view","/preview");
     }
 
-    box.innerHTML = `
-    <div class="result-card success">
+    document.getElementById("resultBox").innerHTML = `
+    <div class="result-card success animate-in">
 
         <span class="verified-badge">✔ VERIFIED</span>
 
@@ -110,11 +104,28 @@ function renderResult(user){
         <p>ID: ${user.ID || user["ID "]}</p>
 
         <div class="event-box">
-            <p><strong>Event:</strong> ${user.Event || "N/A"}</p>
-            <p><strong>Date:</strong> ${user.Date || "N/A"}</p>
+            <p><strong>Event:</strong> ${user.Event}</p>
+            <p><strong>Date:</strong> ${user.Date}</p>
         </div>
 
         <iframe src="${certLink}" width="100%" height="400"></iframe>
+
+    </div>`;
+}
+
+// ================= INVALID UI =================
+function showInvalid(){
+
+    document.getElementById("resultBox").innerHTML = `
+    <div class="result-card fail animate-fail">
+
+        <span class="fail-badge">✖ NOT VERIFIED</span>
+
+        <h2>Invalid Certificate</h2>
+
+        <p>This certificate is not found in our database.</p>
+
+        <div class="error-icon">⚠</div>
 
     </div>`;
 }

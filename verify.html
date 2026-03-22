@@ -11,7 +11,7 @@
 <!-- Google Font -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
 
-<!-- QR Scanner -->
+<!-- QR Scanner Library -->
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 </head>
@@ -45,11 +45,12 @@
 
         <!-- QR BUTTON -->
         <button onclick="scanQR()">📷 Scan QR</button>
+        <button onclick="switchCamera()">🔄 Switch Camera</button>
 
         <!-- QR CAMERA -->
         <div id="qr-reader" style="display:none;"></div>
 
-        <!-- OPTIONAL RESULT (future use / animation) -->
+        <!-- RESULT -->
         <div id="verifyResult"></div>
 
     </div>

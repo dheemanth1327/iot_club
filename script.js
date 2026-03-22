@@ -130,20 +130,20 @@ async function verifyCertificate(){
 
     let foundUser = null;
 
-    // 🔹 LOCAL STORAGE CHECK
+    // LOCAL STORAGE CHECK
     const localData = getMembers();
 
     for(let i=0;i<localData.length;i++){
-        const sheetName = String(localData[i].Name || "").toLowerCase();
-        const sheetId = String(localData[i].ID || "").toLowerCase();
-
-        if(sheetName === name && sheetId === id){
+        if(
+            String(localData[i].Name).toLowerCase() === name &&
+            String(localData[i].ID).toLowerCase() === id
+        ){
             foundUser = localData[i];
             break;
         }
     }
 
-    // 🔹 GOOGLE SHEET CHECK
+    // GOOGLE SHEET CHECK
     if(!foundUser){
         const url = "https://opensheet.elk.sh/188kV2CseK37tFy5R1tUYm6AZjL9k1Y71i64Jqra1dFQ/Sheet1";
 
@@ -151,7 +151,7 @@ async function verifyCertificate(){
             const res = await fetch(url);
             const data = await res.json();
 
-            for(let i = 0; i < data.length; i++){
+            for(let i=0;i<data.length;i++){
                 const sheetName = String(data[i].Name || "").trim().toLowerCase();
                 const sheetId = String(data[i].ID || data[i]["ID "] || "").trim().toLowerCase();
 
@@ -160,18 +160,19 @@ async function verifyCertificate(){
                     break;
                 }
             }
+
         }catch(err){
             console.error(err);
         }
     }
 
-    // 🔹 FINAL RESULT
+    // RESULT
     if(foundUser){
 
         let certLink = String(foundUser.Link || "").trim();
 
         if(certLink.includes("drive.google.com")){
-            certLink = certLink.replace("/view", "/preview");
+            certLink = certLink.replace("/view","/preview");
         }
 
         const finalData = {
@@ -186,18 +187,23 @@ async function verifyCertificate(){
         window.location.href = "result.html";
 
     }else{
-        alert("❌ Not Verified");
+
+        localStorage.setItem("certData", JSON.stringify({
+            status: "invalid"
+        }));
+
+        window.location.href = "result.html";
     }
 }
 
-// ================= QR SCANNER (MERGED LOGIC) =================
+// ================= QR SCANNER WITH CAMERA SWITCH =================
 let qrScanner;
+let cameras = [];
+let currentCameraIndex = 0;
 
 function scanQR(){
 
     const qrBox = document.getElementById("qr-reader");
-    if(!qrBox) return;
-
     qrBox.style.display = "block";
 
     if(qrScanner){
@@ -208,66 +214,10 @@ function scanQR(){
 
     Html5Qrcode.getCameras().then(devices => {
 
-        if(devices && devices.length){
+        cameras = devices;
 
-            qrScanner.start(
-                devices[0].id,
-                { fps: 10, qrbox: 250 },
-
-                qrMessage => {
-
-                    console.log("QR:", qrMessage);
-
-                    // ✅ CASE 1: QR contains URL → redirect directly
-                    if(qrMessage.includes("http")){
-                        window.location.href = qrMessage;
-                        return;
-                    }
-
-                    // ✅ CASE 2: BASE64 ENCODED (name|id)
-                    try{
-                        const decoded = atob(qrMessage);
-                        if(decoded.includes("|")){
-                            const [name, id] = decoded.split("|");
-
-                            document.getElementById("verifyName").value = name;
-                            document.getElementById("verifyId").value = id;
-
-                            qrScanner.stop();
-                            qrBox.style.display = "none";
-
-                            verifyCertificate();
-                            return;
-                        }
-                    }catch(e){}
-
-                    // ✅ CASE 3: CUSTOM FORMAT (name:xxx,id:xxx)
-                    try{
-                        const parts = qrMessage.split(",");
-
-                        let name = "";
-                        let id = "";
-
-                        parts.forEach(p => {
-                            if(p.includes("name:")) name = p.split("name:")[1];
-                            if(p.includes("id:")) id = p.split("id:")[1];
-                        });
-
-                        if(name && id){
-                            document.getElementById("verifyName").value = name;
-                            document.getElementById("verifyId").value = id;
-
-                            qrScanner.stop();
-                            qrBox.style.display = "none";
-
-                            verifyCertificate();
-                            return;
-                        }
-                    }catch(e){}
-
-                    alert("❌ Invalid QR");
-                }
-            );
+        if(devices.length){
+            startCamera(devices[currentCameraIndex].id);
         }
 
     }).catch(()=>{
@@ -275,7 +225,59 @@ function scanQR(){
     });
 }
 
-// ================= TYPING EFFECT =================
+function startCamera(cameraId){
+
+    qrScanner.start(
+        cameraId,
+        { fps: 10, qrbox: 250 },
+
+        qrMessage => {
+
+            console.log("QR:", qrMessage);
+
+            // URL QR
+            if(qrMessage.includes("http")){
+                window.location.href = qrMessage;
+                return;
+            }
+
+            // BASE64 QR
+            try{
+                const decoded = atob(qrMessage);
+
+                if(decoded.includes("|")){
+                    const [name, id] = decoded.split("|");
+
+                    document.getElementById("verifyName").value = name;
+                    document.getElementById("verifyId").value = id;
+
+                    qrScanner.stop();
+                    qrBox.style.display = "none";
+
+                    verifyCertificate();
+                    return;
+                }
+
+            }catch{}
+
+            alert("❌ Invalid QR");
+        }
+    );
+}
+
+function switchCamera(){
+
+    if(!cameras.length) return;
+
+    qrScanner.stop().then(() => {
+
+        currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
+
+        startCamera(cameras[currentCameraIndex].id);
+    });
+}
+
+// ================= TYPING =================
 let text = "IOTIFY";
 let i = 0;
 

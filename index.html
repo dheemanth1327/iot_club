@@ -15,10 +15,7 @@
 
 <!-- NAVBAR -->
 <nav>
-    <h1>IOTIFY</h1>
-    <div>
-        <button class="login-btn" onclick="openLogin()">Login</button>
-    </div>
+    <h1 ondblclick="window.location.href='admin.html'">IOTIFY</h1>
 </nav>
 
 <!-- HERO -->
@@ -45,40 +42,9 @@
 
 <footer>Built with Innovation</footer>
 
-<!-- LOGIN MODAL -->
-<div id="loginModal" class="modal">
-    <div class="modal-content">
 
-        <!-- CLOSE -->
-        <span class="close-btn" onclick="closeLogin()">✖</span>
-
-        <h2>Admin Login</h2>
-
-        <!-- INPUTS -->
-        <input type="text" id="adminUser" placeholder="Username">
-        <input type="password" id="adminPass" placeholder="Password">
-
-        <!-- LOGIN -->
-        <button onclick="adminLogin()">Login</button>
-
-    </div>
-</div>
 
 <script src="script.js"></script>
-
-<script>
-// 🔐 ADMIN LOGIN
-function adminLogin(){
-    const user = document.getElementById("adminUser").value;
-    const pass = document.getElementById("adminPass").value;
-
-    if(user === "admin" && pass === "iotify123"){
-        window.location.href = "admin.html";
-    }else{
-        alert("Invalid credentials ❌");
-    }
-}
-</script>
 
 </body>
 </html>
