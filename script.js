@@ -15,34 +15,130 @@ function goToVerify(){
     window.location.href = "verify.html";
 }
 
-// ================= VERIFY CERTIFICATE =================
-async function verifyCertificate(){
+// ================= LOGIN =================
+function openLogin(){
+    const modal = document.getElementById("loginModal");
+    if(modal) modal.style.display = "flex";
+}
 
-    const name = document.getElementById("verifyName").value.trim().toLowerCase();
-    const id = document.getElementById("verifyId").value.trim().toLowerCase();
+function closeLogin(){
+    const modal = document.getElementById("loginModal");
+    if(modal) modal.style.display = "none";
+}
+
+function login(){
+    const username = document.getElementById("adminUser")?.value;
+    const password = document.getElementById("adminPass")?.value;
+
+    if(username === "admin" && password === "iotify123"){
+        localStorage.setItem("isAdmin", "true");
+        window.location.href = "admin.html";
+    }else{
+        alert("❌ Invalid Login");
+    }
+}
+
+// ================= ADMIN AUTH =================
+if(window.location.pathname.includes("admin.html")){
+    if(localStorage.getItem("isAdmin") !== "true"){
+        window.location.href = "index.html";
+    }
+}
+
+function logout(){
+    localStorage.removeItem("isAdmin");
+    window.location.href = "index.html";
+}
+
+// ================= MEMBER STORAGE =================
+function getMembers(){
+    return JSON.parse(localStorage.getItem("members")) || [];
+}
+
+function saveMembers(data){
+    localStorage.setItem("members", JSON.stringify(data));
+}
+
+// ================= ADD MEMBER =================
+function addMember(){
+
+    const member = {
+        Name: document.getElementById("name").value,
+        ID: document.getElementById("id").value,
+        Event: document.getElementById("event").value,
+        Date: document.getElementById("date").value,
+        Link: document.getElementById("link").value
+    };
+
+    if(!member.Name || !member.ID){
+        alert("⚠ Fill required fields");
+        return;
+    }
+
+    let members = getMembers();
+    members.push(member);
+    saveMembers(members);
+
+    alert("✅ Member Added");
+    loadMembers();
+}
+
+// ================= LOAD MEMBERS =================
+function loadMembers(){
+
+    const list = document.getElementById("memberList");
+    if(!list) return;
+
+    let members = getMembers();
+    list.innerHTML = "";
+
+    members.forEach((m, index) => {
+        list.innerHTML += `
+            <div class="card">
+                <p><b>${m.Name}</b></p>
+                <p>ID: ${m.ID}</p>
+                <p>${m.Event}</p>
+                <button onclick="deleteMember(${index})">Delete</button>
+            </div>
+        `;
+    });
+}
+
+// ================= DELETE MEMBER =================
+function deleteMember(index){
+    let members = getMembers();
+    members.splice(index,1);
+    saveMembers(members);
+    loadMembers();
+}
+
+// ================= VERIFY CERTIFICATE =================
+function verifyCertificate(){
+
+    const name = document.getElementById("verifyName").value.trim();
+    const id = document.getElementById("verifyId").value.trim();
 
     if(!name || !id){
         alert("⚠ Enter all fields");
         return;
     }
 
-    const encoded = btoa(name + "|" + id);
+    const encoded = btoa(`${name}|${id}`);
 
-    // 🔥 IMPORTANT FOR GITHUB PAGES
-    const link = `${window.location.origin}/iot_club/result.html?data=${encoded}`;
-
-    window.location.href = link;
+    window.location.href = `result.html?data=${encoded}`;
 }
-
-// ================= QR SCANNER =================
-let qrScanner;
-let cameras = [];
-let currentCameraIndex = 0;
 
 function scanQR(){
 
     const qrBox = document.getElementById("qr-reader");
     if(!qrBox) return;
+
+    // BLOCK DESKTOP
+    if(!isMobile()){
+        qrBox.innerHTML = "<p style='color:red;text-align:center'>📱 Use mobile to scan QR</p>";
+        qrBox.style.display = "block";
+        return;
+    }
 
     qrBox.style.display = "block";
 
@@ -61,6 +157,7 @@ function scanQR(){
             return;
         }
 
+        // DEFAULT → BACK CAMERA
         let backIndex = devices.findIndex(device =>
             device.label.toLowerCase().includes("back") ||
             device.label.toLowerCase().includes("rear") ||
@@ -72,36 +169,53 @@ function scanQR(){
         startCamera(cameras[currentCameraIndex].id);
 
     }).catch(()=>{
-        alert("❌ Camera permission denied");
+        alert("❌ Camera access denied");
     });
 }
 
 function startCamera(cameraId){
     qrScanner.start(
         cameraId,
-        { fps: 20, qrbox: { width: 250, height: 250 } },
+        { fps: 10, qrbox: 250 },
         onScanSuccess
     );
 }
 
 function onScanSuccess(qrMessage){
 
-    // ✅ If QR has full URL → go directly
-    if(qrMessage.includes("http")){
+    console.log("QR:", qrMessage);
+
+    // ✅ If QR is already a URL → open directly
+    if(qrMessage.startsWith("http")){
         window.location.href = qrMessage;
         return;
     }
 
-    // ❌ Invalid QR
+    // ✅ If QR is base64 → convert to result URL
+    try{
+        const decoded = atob(qrMessage);
+
+        if(decoded.includes("|")){
+            const encoded = btoa(decoded);
+            window.location.href = `result.html?data=${encoded}`;
+            return;
+        }
+
+    }catch{}
+
     alert("❌ Invalid QR");
 }
 
+
+// 🔁 SWITCH CAMERA BUTTON
 function switchCamera(){
 
     if(!cameras.length) return;
 
     qrScanner.stop().then(() => {
+
         currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
+
         startCamera(cameras[currentCameraIndex].id);
     });
 }
@@ -172,4 +286,6 @@ window.onload = function(){
 
         draw();
     }
+
+    loadMembers();
 };
