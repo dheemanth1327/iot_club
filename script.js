@@ -196,14 +196,14 @@ async function verifyCertificate(){
     }
 }
 
-// ================= QR SCANNER WITH CAMERA SWITCH =================
+// ================= QR SCANNER (FRONT CAMERA) =================
 let qrScanner;
-let cameras = [];
-let currentCameraIndex = 0;
 
 function scanQR(){
 
     const qrBox = document.getElementById("qr-reader");
+    if(!qrBox) return;
+
     qrBox.style.display = "block";
 
     if(qrScanner){
@@ -212,23 +212,8 @@ function scanQR(){
 
     qrScanner = new Html5Qrcode("qr-reader");
 
-    Html5Qrcode.getCameras().then(devices => {
-
-        cameras = devices;
-
-        if(devices.length){
-            startCamera(devices[currentCameraIndex].id);
-        }
-
-    }).catch(()=>{
-        alert("Camera not accessible");
-    });
-}
-
-function startCamera(cameraId){
-
     qrScanner.start(
-        cameraId,
+        { facingMode: "user" }, // ✅ FRONT CAMERA
         { fps: 10, qrbox: 250 },
 
         qrMessage => {
@@ -262,22 +247,12 @@ function startCamera(cameraId){
 
             alert("❌ Invalid QR");
         }
-    );
-}
-
-function switchCamera(){
-
-    if(!cameras.length) return;
-
-    qrScanner.stop().then(() => {
-
-        currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
-
-        startCamera(cameras[currentCameraIndex].id);
+    ).catch(()=>{
+        alert("Camera not accessible");
     });
 }
 
-// ================= TYPING =================
+// ================= TYPING EFFECT =================
 let text = "IOTIFY";
 let i = 0;
 
