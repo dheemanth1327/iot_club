@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 
+<!-- QR LIB -->
 <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 
@@ -20,7 +21,7 @@
     <button onclick="goHome()">Home</button>
 </nav>
 
-<!-- ✅ FIXED CENTERING -->
+<!-- VERIFY SECTION -->
 <section class="verify-section">
 
     <div class="verify-container">
@@ -37,16 +38,34 @@
 
         <p class="or">OR</p>
 
-        <button class="scan-btn" onclick="scanQR()">📷 Scan QR</button>
-
-        <div id="qr-reader" style="display:none;"></div>
-
-        <button class="switch-btn" onclick="switchCamera()">🔄 Switch Camera</button>
+        <button class="scan-btn" onclick="openScanner()">📷 Scan QR</button>
 
     </div>
 
 </section>
 
+<!-- 🔥 SCANNER OVERLAY -->
+<div id="scannerOverlay" class="scanner-overlay" style="display:none;">
+
+    <div class="scanner-box">
+
+        <button class="close-scan" onclick="closeScanner()">✖</button>
+
+        <div id="qr-reader" class="scanner-view"></div>
+
+        <div class="scan-frame">
+            <div class="scan-line"></div>
+        </div>
+
+        <p class="scan-text">Align QR within frame</p>
+
+        <button class="switch-btn" onclick="switchCamera()">🔄 Switch Camera</button>
+
+    </div>
+
+</div>
+
 <script src="script.js"></script>
+
 </body>
 </html>

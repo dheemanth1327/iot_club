@@ -320,3 +320,17 @@ window.onload = function(){
 
     loadMembers();
 };
+// OPEN SCANNER
+function openScanner(){
+    document.getElementById("scannerOverlay").style.display = "flex";
+    scanQR();
+}
+
+// CLOSE SCANNER
+function closeScanner(){
+    document.getElementById("scannerOverlay").style.display = "none";
+
+    if(qrScanner){
+        qrScanner.stop().catch(()=>{});
+    }
+}   
