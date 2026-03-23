@@ -27,23 +27,6 @@ window.onload = async function(){
 
     const box = document.getElementById("resultBox");
 
-    // ================= CHECK LOCAL DATA =================
-    const localData = JSON.parse(localStorage.getItem("certData"));
-
-    if(localData){
-
-        // ❌ INVALID CASE
-        if(localData.status === "invalid"){
-            showInvalid();
-            return;
-        }
-
-        // ✅ VALID CASE
-        renderResult(localData);
-        return;
-    }
-
-    // ================= QR FLOW =================
     const params = new URLSearchParams(window.location.search);
     const encoded = params.get("data");
 
@@ -85,50 +68,6 @@ window.onload = async function(){
         showInvalid();
     }
 };
-
-// ================= VALID UI =================
-function renderResult(user){
-
-    let certLink = user.Link;
-
-    if(certLink.includes("drive")){
-        certLink = certLink.replace("/view","/preview");
-    }
-
-    document.getElementById("resultBox").innerHTML = `
-    <div class="result-card success animate-in">
-
-        <span class="verified-badge">✔ VERIFIED</span>
-
-        <h2>${user.Name}</h2>
-        <p>ID: ${user.ID || user["ID "]}</p>
-
-        <div class="event-box">
-            <p><strong>Event:</strong> ${user.Event}</p>
-            <p><strong>Date:</strong> ${user.Date}</p>
-        </div>
-
-        <iframe src="${certLink}" width="100%" height="400"></iframe>
-
-    </div>`;
-}
-
-// ================= INVALID UI =================
-function showInvalid(){
-
-    document.getElementById("resultBox").innerHTML = `
-    <div class="result-card fail animate-fail">
-
-        <span class="fail-badge">✖ NOT VERIFIED</span>
-
-        <h2>Invalid Certificate</h2>
-
-        <p>This certificate is not found in our database.</p>
-
-        <div class="error-icon">⚠</div>
-
-    </div>`;
-}
 </script>
 
 </body>

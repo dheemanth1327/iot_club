@@ -15,200 +15,51 @@ function goToVerify(){
     window.location.href = "verify.html";
 }
 
-// ================= LOGIN =================
-function openLogin(){
-    const modal = document.getElementById("loginModal");
-    if(modal) modal.style.display = "flex";
-}
-
-function closeLogin(){
-    const modal = document.getElementById("loginModal");
-    if(modal) modal.style.display = "none";
-}
-
-function login(){
-    const username = document.getElementById("adminUser")?.value;
-    const password = document.getElementById("adminPass")?.value;
-
-    if(username === "admin" && password === "iotify123"){
-        localStorage.setItem("isAdmin", "true");
-        window.location.href = "admin.html";
-    }else{
-        alert("❌ Invalid Login");
-    }
-}
-
-// ================= ADMIN AUTH =================
-if(window.location.pathname.includes("admin.html")){
-    if(localStorage.getItem("isAdmin") !== "true"){
-        window.location.href = "index.html";
-    }
-}
-
-function logout(){
-    localStorage.removeItem("isAdmin");
-    window.location.href = "index.html";
-}
-
-// ================= MEMBER STORAGE =================
-function getMembers(){
-    return JSON.parse(localStorage.getItem("members")) || [];
-}
-
-function saveMembers(data){
-    localStorage.setItem("members", JSON.stringify(data));
-}
-
-// ================= ADD MEMBER =================
-function addMember(){
-
-    const member = {
-        Name: document.getElementById("name").value,
-        ID: document.getElementById("id").value,
-        Event: document.getElementById("event").value,
-        Date: document.getElementById("date").value,
-        Link: document.getElementById("link").value
-    };
-
-    if(!member.Name || !member.ID){
-        alert("⚠ Fill required fields");
-        return;
-    }
-
-    let members = getMembers();
-    members.push(member);
-    saveMembers(members);
-
-    alert("✅ Member Added");
-    loadMembers();
-}
-
-// ================= LOAD MEMBERS =================
-function loadMembers(){
-
-    const list = document.getElementById("memberList");
-    if(!list) return;
-
-    let members = getMembers();
-    list.innerHTML = "";
-
-    members.forEach((m, index) => {
-        list.innerHTML += `
-            <div class="card">
-                <p><b>${m.Name}</b></p>
-                <p>ID: ${m.ID}</p>
-                <p>${m.Event}</p>
-                <button onclick="deleteMember(${index})">Delete</button>
-            </div>
-        `;
-    });
-}
-
-// ================= DELETE MEMBER =================
-function deleteMember(index){
-    let members = getMembers();
-    members.splice(index,1);
-    saveMembers(members);
-    loadMembers();
-}
-
 // ================= VERIFY CERTIFICATE =================
 async function verifyCertificate(){
 
-    const nameInput = document.getElementById("verifyName");
-    const idInput = document.getElementById("verifyId");
-
-    if(!nameInput || !idInput) return;
-
-    const name = nameInput.value.trim().toLowerCase();
-    const id = idInput.value.trim().toLowerCase();
+    const name = document.getElementById("verifyName").value.trim().toLowerCase();
+    const id = document.getElementById("verifyId").value.trim().toLowerCase();
 
     if(!name || !id){
         alert("⚠ Enter all fields");
         return;
     }
 
-    let foundUser = null;
+    const url = "https://opensheet.elk.sh/188kV2CseK37tFy5R1tUYm6AZjL9k1Y71i64Jqra1dFQ/Sheet1";
 
-    const localData = getMembers();
+    try{
+        const res = await fetch(url);
+        const data = await res.json();
 
-    for(let i=0;i<localData.length;i++){
-        if(
-            String(localData[i].Name).toLowerCase() === name &&
-            String(localData[i].ID).toLowerCase() === id
-        ){
-            foundUser = localData[i];
-            break;
-        }
-    }
+        const user = data.find(r =>
+            String(r.Name || "").toLowerCase() === name &&
+            String(r.ID || r["ID "] || "").toLowerCase() === id
+        );
 
-    if(!foundUser){
-        const url = "https://opensheet.elk.sh/188kV2CseK37tFy5R1tUYm6AZjL9k1Y71i64Jqra1dFQ/Sheet1";
-
-        try{
-            const res = await fetch(url);
-            const data = await res.json();
-
-            for(let i=0;i<data.length;i++){
-                const sheetName = String(data[i].Name || "").trim().toLowerCase();
-                const sheetId = String(data[i].ID || data[i]["ID "] || "").trim().toLowerCase();
-
-                if(sheetName === name && sheetId === id){
-                    foundUser = data[i];
-                    break;
-                }
-            }
-
-        }catch(err){
-            console.error(err);
-        }
-    }
-
-    if(foundUser){
-
-        let certLink = String(foundUser.Link || "").trim();
-
-        if(certLink.includes("drive.google.com")){
-            certLink = certLink.replace("/view","/preview");
+        if(user){
+            localStorage.setItem("certData", JSON.stringify(user));
+        }else{
+            localStorage.setItem("certData", JSON.stringify({ status: "invalid" }));
         }
 
-        const finalData = {
-            Name: foundUser.Name,
-            ID: foundUser.ID || foundUser["ID "],
-            Event: foundUser.Event || "N/A",
-            Date: foundUser.Date || "N/A",
-            Link: certLink
-        };
-
-        localStorage.setItem("certData", JSON.stringify(finalData));
         window.location.href = "result.html";
 
-    }else{
-        localStorage.setItem("certData", JSON.stringify({ status: "invalid" }));
-        window.location.href = "result.html";
+    }catch{
+        alert("❌ Network error");
     }
 }
 
-// ================= QR SCANNER WITH SWITCH =================
+// ================= QR SCANNER =================
 let qrScanner;
 let cameras = [];
 let currentCameraIndex = 0;
 
-function isMobile(){
-    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-}
-
 function scanQR(){
 
     const qrBox = document.getElementById("qr-reader");
-    if(!qrBox) return;
 
-    // BLOCK DESKTOP
-    if(!isMobile()){
-        qrBox.innerHTML = "<p style='color:red;text-align:center'>📱 Use mobile to scan QR</p>";
-        qrBox.style.display = "block";
-        return;
-    }
+    if(!qrBox) return;
 
     qrBox.style.display = "block";
 
@@ -222,12 +73,6 @@ function scanQR(){
 
         cameras = devices;
 
-        if(!devices.length){
-            alert("❌ No camera found");
-            return;
-        }
-
-        // DEFAULT → BACK CAMERA
         let backIndex = devices.findIndex(device =>
             device.label.toLowerCase().includes("back") ||
             device.label.toLowerCase().includes("rear") ||
@@ -246,50 +91,27 @@ function scanQR(){
 function startCamera(cameraId){
     qrScanner.start(
         cameraId,
-        { fps: 10, qrbox: 250 },
+        { fps: 20, qrbox: { width: 250, height: 250 } },
         onScanSuccess
     );
 }
 
 function onScanSuccess(qrMessage){
 
-    console.log("QR:", qrMessage);
-
     if(qrMessage.includes("http")){
         window.location.href = qrMessage;
         return;
     }
 
-    try{
-        const decoded = atob(qrMessage);
-
-        if(decoded.includes("|")){
-            const [name, id] = decoded.split("|");
-
-            document.getElementById("verifyName").value = name;
-            document.getElementById("verifyId").value = id;
-
-            qrScanner.stop();
-            document.getElementById("qr-reader").style.display = "none";
-
-            verifyCertificate();
-            return;
-        }
-
-    }catch{}
-
     alert("❌ Invalid QR");
 }
 
-// 🔁 SWITCH CAMERA BUTTON
 function switchCamera(){
 
     if(!cameras.length) return;
 
     qrScanner.stop().then(() => {
-
         currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
-
         startCamera(cameras[currentCameraIndex].id);
     });
 }
@@ -360,6 +182,4 @@ window.onload = function(){
 
         draw();
     }
-
-    loadMembers();
 };
