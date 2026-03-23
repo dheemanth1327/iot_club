@@ -130,7 +130,6 @@ async function verifyCertificate(){
 
     let foundUser = null;
 
-    // LOCAL STORAGE CHECK
     const localData = getMembers();
 
     for(let i=0;i<localData.length;i++){
@@ -196,13 +195,24 @@ async function verifyCertificate(){
     }
 }
 
-// ================= QR SCANNER (FRONT CAMERA) =================
+// ================= QR SCANNER (MOBILE BACK CAMERA ONLY) =================
 let qrScanner;
+
+function isMobile(){
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
 
 function scanQR(){
 
     const qrBox = document.getElementById("qr-reader");
     if(!qrBox) return;
+
+    // ❌ BLOCK DESKTOP
+    if(!isMobile()){
+        qrBox.innerHTML = "<p style='color:red;text-align:center'>📱 Use mobile to scan QR</p>";
+        qrBox.style.display = "block";
+        return;
+    }
 
     qrBox.style.display = "block";
 
@@ -212,47 +222,67 @@ function scanQR(){
 
     qrScanner = new Html5Qrcode("qr-reader");
 
-    qrScanner.start(
-        { facingMode: "user" }, // ✅ FRONT CAMERA
-        { fps: 10, qrbox: 250 },
+    Html5Qrcode.getCameras().then(devices => {
 
-        qrMessage => {
+        if(!devices || devices.length === 0){
+            alert("❌ No camera found");
+            return;
+        }
 
-            console.log("QR:", qrMessage);
+        // 🔥 SELECT BACK CAMERA
+        let backCamera = devices.find(device =>
+            device.label.toLowerCase().includes("back") ||
+            device.label.toLowerCase().includes("rear") ||
+            device.label.toLowerCase().includes("environment")
+        );
 
-            // URL QR
-            if(qrMessage.includes("http")){
-                window.location.href = qrMessage;
-                return;
-            }
+        // fallback → last camera
+        if(!backCamera){
+            backCamera = devices[devices.length - 1];
+        }
 
-            // BASE64 QR
-            try{
-                const decoded = atob(qrMessage);
+        qrScanner.start(
+            backCamera.id,
+            { fps: 10, qrbox: 250 },
 
-                if(decoded.includes("|")){
-                    const [name, id] = decoded.split("|");
+            qrMessage => {
 
-                    document.getElementById("verifyName").value = name;
-                    document.getElementById("verifyId").value = id;
+                console.log("QR:", qrMessage);
 
-                    qrScanner.stop();
-                    qrBox.style.display = "none";
-
-                    verifyCertificate();
+                if(qrMessage.includes("http")){
+                    window.location.href = qrMessage;
                     return;
                 }
 
-            }catch{}
+                try{
+                    const decoded = atob(qrMessage);
 
-            alert("❌ Invalid QR");
-        }
-    ).catch(()=>{
-        alert("Camera not accessible");
+                    if(decoded.includes("|")){
+                        const [name, id] = decoded.split("|");
+
+                        document.getElementById("verifyName").value = name;
+                        document.getElementById("verifyId").value = id;
+
+                        qrScanner.stop();
+                        qrBox.style.display = "none";
+
+                        verifyCertificate();
+                        return;
+                    }
+
+                }catch{}
+
+                alert("❌ Invalid QR");
+            }
+
+        );
+
+    }).catch(()=>{
+        alert("❌ Camera access denied");
     });
 }
 
-// ================= TYPING EFFECT =================
+// ================= TYPING =================
 let text = "IOTIFY";
 let i = 0;
 
