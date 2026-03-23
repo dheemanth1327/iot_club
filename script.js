@@ -142,7 +142,6 @@ async function verifyCertificate(){
         }
     }
 
-    // GOOGLE SHEET CHECK
     if(!foundUser){
         const url = "https://opensheet.elk.sh/188kV2CseK37tFy5R1tUYm6AZjL9k1Y71i64Jqra1dFQ/Sheet1";
 
@@ -165,7 +164,6 @@ async function verifyCertificate(){
         }
     }
 
-    // RESULT
     if(foundUser){
 
         let certLink = String(foundUser.Link || "").trim();
@@ -186,17 +184,15 @@ async function verifyCertificate(){
         window.location.href = "result.html";
 
     }else{
-
-        localStorage.setItem("certData", JSON.stringify({
-            status: "invalid"
-        }));
-
+        localStorage.setItem("certData", JSON.stringify({ status: "invalid" }));
         window.location.href = "result.html";
     }
 }
 
-// ================= QR SCANNER (MOBILE BACK CAMERA ONLY) =================
+// ================= QR SCANNER WITH SWITCH =================
 let qrScanner;
+let cameras = [];
+let currentCameraIndex = 0;
 
 function isMobile(){
     return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -207,7 +203,7 @@ function scanQR(){
     const qrBox = document.getElementById("qr-reader");
     if(!qrBox) return;
 
-    // ❌ BLOCK DESKTOP
+    // BLOCK DESKTOP
     if(!isMobile()){
         qrBox.innerHTML = "<p style='color:red;text-align:center'>📱 Use mobile to scan QR</p>";
         qrBox.style.display = "block";
@@ -224,61 +220,77 @@ function scanQR(){
 
     Html5Qrcode.getCameras().then(devices => {
 
-        if(!devices || devices.length === 0){
+        cameras = devices;
+
+        if(!devices.length){
             alert("❌ No camera found");
             return;
         }
 
-        // 🔥 SELECT BACK CAMERA
-        let backCamera = devices.find(device =>
+        // DEFAULT → BACK CAMERA
+        let backIndex = devices.findIndex(device =>
             device.label.toLowerCase().includes("back") ||
             device.label.toLowerCase().includes("rear") ||
             device.label.toLowerCase().includes("environment")
         );
 
-        // fallback → last camera
-        if(!backCamera){
-            backCamera = devices[devices.length - 1];
-        }
+        currentCameraIndex = backIndex !== -1 ? backIndex : devices.length - 1;
 
-        qrScanner.start(
-            backCamera.id,
-            { fps: 10, qrbox: 250 },
-
-            qrMessage => {
-
-                console.log("QR:", qrMessage);
-
-                if(qrMessage.includes("http")){
-                    window.location.href = qrMessage;
-                    return;
-                }
-
-                try{
-                    const decoded = atob(qrMessage);
-
-                    if(decoded.includes("|")){
-                        const [name, id] = decoded.split("|");
-
-                        document.getElementById("verifyName").value = name;
-                        document.getElementById("verifyId").value = id;
-
-                        qrScanner.stop();
-                        qrBox.style.display = "none";
-
-                        verifyCertificate();
-                        return;
-                    }
-
-                }catch{}
-
-                alert("❌ Invalid QR");
-            }
-
-        );
+        startCamera(cameras[currentCameraIndex].id);
 
     }).catch(()=>{
         alert("❌ Camera access denied");
+    });
+}
+
+function startCamera(cameraId){
+    qrScanner.start(
+        cameraId,
+        { fps: 10, qrbox: 250 },
+        onScanSuccess
+    );
+}
+
+function onScanSuccess(qrMessage){
+
+    console.log("QR:", qrMessage);
+
+    if(qrMessage.includes("http")){
+        window.location.href = qrMessage;
+        return;
+    }
+
+    try{
+        const decoded = atob(qrMessage);
+
+        if(decoded.includes("|")){
+            const [name, id] = decoded.split("|");
+
+            document.getElementById("verifyName").value = name;
+            document.getElementById("verifyId").value = id;
+
+            qrScanner.stop();
+            document.getElementById("qr-reader").style.display = "none";
+
+            verifyCertificate();
+            return;
+        }
+
+    }catch{}
+
+    alert("❌ Invalid QR");
+}
+
+// 🔁 SWITCH CAMERA BUTTON
+function switchCamera(){
+
+    if(!cameras.length) return;
+
+    qrScanner.stop().then(() => {
+
+        currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
+
+        startCamera(cameras[currentCameraIndex].id);
     });
 }
 
