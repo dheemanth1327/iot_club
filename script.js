@@ -15,18 +15,154 @@ function goToVerify(){
     window.location.href = "verify.html";
 }
 
-// ================= LOGIN =================
-function openLogin(){
-    const modal = document.getElementById("loginModal");
-    if(modal) modal.style.display = "flex";
+// ================= VERIFY (MANUAL INPUT) =================
+function verifyCertificate(){
+
+    const name = document.getElementById("verifyName").value.trim();
+    const id = document.getElementById("verifyId").value.trim();
+
+    if(!name || !id){
+        alert("⚠ Enter all fields");
+        return;
+    }
+
+    const encoded = btoa(`${name}|${id}`);
+
+    window.location.href = `result.html?data=${encoded}`;
 }
 
-function closeLogin(){
-    const modal = document.getElementById("loginModal");
-    if(modal) modal.style.display = "none";
+// ================= QR SCANNER =================
+let qrScanner;
+let cameras = [];
+let currentCameraIndex = 0;
+
+// START SCAN
+function scanQR(){
+
+    const qrBox = document.getElementById("qr-reader");
+
+    if(!qrBox){
+        alert("QR container missing");
+        return;
+    }
+
+    qrBox.style.display = "block";
+    qrBox.innerHTML = "<p style='text-align:center'>📷 Starting camera...</p>";
+
+    qrScanner = new Html5Qrcode("qr-reader");
+
+    Html5Qrcode.getCameras()
+    .then(devices => {
+
+        if(!devices || devices.length === 0){
+            alert("❌ No camera found");
+            return;
+        }
+
+        cameras = devices;
+
+        console.log("Cameras:", devices);
+
+        // Prefer back camera
+        currentCameraIndex = devices.findIndex(d =>
+            d.label.toLowerCase().includes("back") ||
+            d.label.toLowerCase().includes("rear") ||
+            d.label.toLowerCase().includes("environment")
+        );
+
+        if(currentCameraIndex === -1){
+            currentCameraIndex = 0;
+        }
+
+        startCamera(cameras[currentCameraIndex].id);
+
+    })
+    .catch(err => {
+        console.error(err);
+        alert("❌ Camera access denied");
+    });
 }
 
+// START CAMERA
+function startCamera(cameraId){
+
+    qrScanner.start(
+        cameraId,
+        {
+            fps: 10,
+            qrbox: { width: 250, height: 250 }
+        },
+        (decodedText) => onScanSuccess(decodedText),
+        (error) => {}
+    )
+    .then(() => {
+        console.log("Camera started");
+    })
+    .catch(err => {
+        console.error(err);
+        alert("❌ Failed to start camera");
+    });
+}
+
+// QR SUCCESS
+function onScanSuccess(qrMessage){
+
+    console.log("QR:", qrMessage);
+
+    if(qrScanner){
+        qrScanner.stop();
+    }
+
+    // If QR is URL → open
+    if(qrMessage.startsWith("http")){
+        window.location.href = qrMessage;
+        return;
+    }
+
+    // If base64 → convert
+    try{
+        const decoded = atob(qrMessage);
+
+        if(decoded.includes("|")){
+            const encoded = btoa(decoded);
+            window.location.href = `result.html?data=${encoded}`;
+            return;
+        }
+
+    }catch{}
+
+    alert("❌ Invalid QR");
+}
+
+// SWITCH CAMERA
+function switchCamera(){
+
+    if(!qrScanner){
+        alert("⚠ Start scanner first");
+        return;
+    }
+
+    if(cameras.length < 2){
+        alert("⚠ Only one camera available");
+        return;
+    }
+
+    qrScanner.stop().then(() => {
+
+        currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
+
+        console.log("Switching camera:", cameras[currentCameraIndex]);
+
+        startCamera(cameras[currentCameraIndex].id);
+
+    }).catch(err => {
+        console.error(err);
+    });
+}
+
+// ================= ADMIN LOGIN =================
 function login(){
+
     const username = document.getElementById("adminUser")?.value;
     const password = document.getElementById("adminPass")?.value;
 
@@ -38,19 +174,19 @@ function login(){
     }
 }
 
-// ================= ADMIN AUTH =================
+function logout(){
+    localStorage.removeItem("isAdmin");
+    window.location.href = "index.html";
+}
+
+// PROTECT ADMIN PAGE
 if(window.location.pathname.includes("admin.html")){
     if(localStorage.getItem("isAdmin") !== "true"){
         window.location.href = "index.html";
     }
 }
 
-function logout(){
-    localStorage.removeItem("isAdmin");
-    window.location.href = "index.html";
-}
-
-// ================= MEMBER STORAGE =================
+// ================= LOCAL MEMBER STORAGE =================
 function getMembers(){
     return JSON.parse(localStorage.getItem("members")) || [];
 }
@@ -59,7 +195,7 @@ function saveMembers(data){
     localStorage.setItem("members", JSON.stringify(data));
 }
 
-// ================= ADD MEMBER =================
+// ADD MEMBER
 function addMember(){
 
     const member = {
@@ -83,7 +219,7 @@ function addMember(){
     loadMembers();
 }
 
-// ================= LOAD MEMBERS =================
+// LOAD MEMBERS
 function loadMembers(){
 
     const list = document.getElementById("memberList");
@@ -104,7 +240,7 @@ function loadMembers(){
     });
 }
 
-// ================= DELETE MEMBER =================
+// DELETE MEMBER
 function deleteMember(index){
     let members = getMembers();
     members.splice(index,1);
@@ -112,115 +248,7 @@ function deleteMember(index){
     loadMembers();
 }
 
-// ================= VERIFY CERTIFICATE =================
-function verifyCertificate(){
-
-    const name = document.getElementById("verifyName").value.trim();
-    const id = document.getElementById("verifyId").value.trim();
-
-    if(!name || !id){
-        alert("⚠ Enter all fields");
-        return;
-    }
-
-    const encoded = btoa(`${name}|${id}`);
-
-    window.location.href = `result.html?data=${encoded}`;
-}
-
-function scanQR(){
-
-    const qrBox = document.getElementById("qr-reader");
-    if(!qrBox) return;
-
-    // BLOCK DESKTOP
-    if(!isMobile()){
-        qrBox.innerHTML = "<p style='color:red;text-align:center'>📱 Use mobile to scan QR</p>";
-        qrBox.style.display = "block";
-        return;
-    }
-
-    qrBox.style.display = "block";
-
-    if(qrScanner){
-        qrScanner.clear();
-    }
-
-    qrScanner = new Html5Qrcode("qr-reader");
-
-    Html5Qrcode.getCameras().then(devices => {
-
-        cameras = devices;
-
-        if(!devices.length){
-            alert("❌ No camera found");
-            return;
-        }
-
-        // DEFAULT → BACK CAMERA
-        let backIndex = devices.findIndex(device =>
-            device.label.toLowerCase().includes("back") ||
-            device.label.toLowerCase().includes("rear") ||
-            device.label.toLowerCase().includes("environment")
-        );
-
-        currentCameraIndex = backIndex !== -1 ? backIndex : devices.length - 1;
-
-        startCamera(cameras[currentCameraIndex].id);
-
-    }).catch(()=>{
-        alert("❌ Camera access denied");
-    });
-}
-
-function startCamera(cameraId){
-    qrScanner.start(
-        cameraId,
-        { fps: 10, qrbox: 250 },
-        onScanSuccess
-    );
-}
-
-function onScanSuccess(qrMessage){
-
-    console.log("QR:", qrMessage);
-
-    // ✅ If QR is already a URL → open directly
-    if(qrMessage.startsWith("http")){
-        window.location.href = qrMessage;
-        return;
-    }
-
-    // ✅ If QR is base64 → convert to result URL
-    try{
-        const decoded = atob(qrMessage);
-
-        if(decoded.includes("|")){
-            const encoded = btoa(decoded);
-            window.location.href = `result.html?data=${encoded}`;
-            return;
-        }
-
-    }catch{}
-
-    alert("❌ Invalid QR");
-}
-
-
-// 🔁 SWITCH CAMERA BUTTON
-function switchCamera(){
-
-    if(!cameras.length) return;
-
-    qrScanner.stop().then(() => {
-
-        currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
-
-        startCamera(cameras[currentCameraIndex].id);
-    });
-}
-
-// ================= TYPING =================
+// ================= TYPING EFFECT =================
 let text = "IOTIFY";
 let i = 0;
 
@@ -234,7 +262,7 @@ function typing(){
     }
 }
 
-// ================= PARTICLES =================
+// ================= PARTICLE BACKGROUND =================
 window.onload = function(){
 
     typing();
@@ -242,6 +270,7 @@ window.onload = function(){
     const canvas = document.getElementById("bg");
 
     if(canvas){
+
         const ctx = canvas.getContext("2d");
 
         function resizeCanvas(){
@@ -265,11 +294,13 @@ window.onload = function(){
         }
 
         function draw(){
+
             ctx.clearRect(0,0,canvas.width,canvas.height);
 
             ctx.fillStyle="#00f7ff";
 
             particles.forEach(p=>{
+
                 ctx.beginPath();
                 ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
                 ctx.fill();
