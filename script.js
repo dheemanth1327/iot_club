@@ -26,28 +26,12 @@ async function verifyCertificate(){
         return;
     }
 
-    const url = "https://opensheet.elk.sh/188kV2CseK37tFy5R1tUYm6AZjL9k1Y71i64Jqra1dFQ/Sheet1";
+    const encoded = btoa(name + "|" + id);
 
-    try{
-        const res = await fetch(url);
-        const data = await res.json();
+    // 🔥 IMPORTANT FOR GITHUB PAGES
+    const link = `${window.location.origin}/iot_club/result.html?data=${encoded}`;
 
-        const user = data.find(r =>
-            String(r.Name || "").toLowerCase() === name &&
-            String(r.ID || r["ID "] || "").toLowerCase() === id
-        );
-
-        if(user){
-            localStorage.setItem("certData", JSON.stringify(user));
-        }else{
-            localStorage.setItem("certData", JSON.stringify({ status: "invalid" }));
-        }
-
-        window.location.href = "result.html";
-
-    }catch{
-        alert("❌ Network error");
-    }
+    window.location.href = link;
 }
 
 // ================= QR SCANNER =================
@@ -58,7 +42,6 @@ let currentCameraIndex = 0;
 function scanQR(){
 
     const qrBox = document.getElementById("qr-reader");
-
     if(!qrBox) return;
 
     qrBox.style.display = "block";
@@ -73,6 +56,11 @@ function scanQR(){
 
         cameras = devices;
 
+        if(!devices.length){
+            alert("❌ No camera found");
+            return;
+        }
+
         let backIndex = devices.findIndex(device =>
             device.label.toLowerCase().includes("back") ||
             device.label.toLowerCase().includes("rear") ||
@@ -84,7 +72,7 @@ function scanQR(){
         startCamera(cameras[currentCameraIndex].id);
 
     }).catch(()=>{
-        alert("❌ Camera access denied");
+        alert("❌ Camera permission denied");
     });
 }
 
@@ -98,11 +86,13 @@ function startCamera(cameraId){
 
 function onScanSuccess(qrMessage){
 
+    // ✅ If QR has full URL → go directly
     if(qrMessage.includes("http")){
         window.location.href = qrMessage;
         return;
     }
 
+    // ❌ Invalid QR
     alert("❌ Invalid QR");
 }
 
