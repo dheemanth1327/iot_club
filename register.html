@@ -1,267 +1,159 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Event Registration - IOTIFY</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        /* ================= RESET & BASE ================= */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IOTIFY Registration</title>
 
-        body {
-            background: radial-gradient(circle at top, #0f2027, #0a0a0f 60%);
-            color: white;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600;700&display=swap" rel="stylesheet">
 
-        /* Background Particles Canvas */
-        canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: -1;
-        }
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
 
-        /* ================= NAVIGATION ================= */
-        nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 50px;
-            position: fixed;
-            width: 100%;
-            top: 0;
-            backdrop-filter: blur(15px);
-            z-index: 1000;
-        }
+body{
+    background: radial-gradient(circle at top,#0f2027,#0a0a0f 60%);
+    color:#fff;
+}
 
-        nav h1 { color: #00f7ff; }
+.register-section{
+    padding:100px 10%;
+    display:flex;
+    justify-content:center;
+}
 
-        nav button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 20px;
-            background: linear-gradient(45deg, #00f7ff, #8a2be2);
-            color: white;
-            cursor: pointer;
-            box-shadow: 0 0 15px rgba(0, 247, 255, 0.5);
-            transition: 0.3s;
-        }
+.register-container{
+    width:100%;
+    max-width:900px;
+    padding:40px;
+    border-radius:25px;
+    background:rgba(255,255,255,0.05);
+    backdrop-filter:blur(15px);
+}
 
-        /* ================= REGISTRATION CONTAINER ================= */
-        .register-section {
-            padding: 120px 10% 60px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+h1{text-align:center;margin-bottom:10px;}
+p{text-align:center;margin-bottom:30px;color:#aaa;}
 
-        .register-container {
-            width: 100%;
-            max-width: 850px;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px);
-            border-radius: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 40px;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6);
-        }
+.form-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:20px;
+}
 
-        .hero-title {
-            font-size: 42px;
-            font-weight: 700;
-            text-align: center;
-            background: linear-gradient(45deg, #00f7ff, #8a2be2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
-        }
+.full{grid-column:span 2;}
 
-        .sub-text {
-            text-align: center;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 40px;
-        }
+input,select{
+    padding:12px;
+    border-radius:10px;
+    border:none;
+    background:#111;
+    color:#fff;
+}
 
-        /* ================= FORM STYLES ================= */
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-        }
+.member{
+    margin-top:20px;
+    padding:20px;
+    border-radius:15px;
+    background:rgba(0,247,255,0.05);
+}
 
-        .full-width { grid-column: span 2; }
+button{
+    margin-top:30px;
+    width:100%;
+    padding:15px;
+    border:none;
+    border-radius:10px;
+    background:#00f7ff;
+    color:#000;
+    font-weight:bold;
+    cursor:pointer;
+}
 
-        input, select {
-            width: 100%;
-            padding: 14px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(0, 0, 0, 0.5);
-            color: #fff;
-            transition: 0.3s;
-        }
-
-        input:focus, select:focus {
-            outline: none;
-            border-color: #00f7ff;
-            box-shadow: 0 0 15px rgba(0, 247, 255, 0.3);
-        }
-
-        /* Member Card Design */
-        .member-section {
-            margin-top: 30px;
-            padding: 25px;
-            border-radius: 20px;
-            background: rgba(0, 247, 255, 0.03);
-            border: 1px solid rgba(0, 247, 255, 0.2);
-            animation: fadeIn 0.5s ease;
-        }
-
-        .member-section h3 {
-            color: #00f7ff;
-            margin-bottom: 20px;
-            font-size: 20px;
-            text-shadow: 0 0 10px rgba(0, 247, 255, 0.5);
-        }
-
-        .submit-btn {
-            width: 100%;
-            margin-top: 40px;
-            padding: 18px;
-            border-radius: 15px;
-            border: none;
-            background: linear-gradient(45deg, #00f7ff, #8a2be2);
-            color: white;
-            font-size: 18px;
-            font-weight: 600;
-            cursor: pointer;
-            box-shadow: 0 10px 20px rgba(0, 247, 255, 0.3);
-            transition: 0.3s;
-        }
-
-        .submit-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 30px rgba(0, 247, 255, 0.5);
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @media (max-width: 768px) {
-            .form-grid { grid-template-columns: 1fr; }
-            .full-width { grid-column: span 1; }
-            nav { padding: 15px 20px; }
-        }
-    </style>
+@media(max-width:768px){
+    .form-grid{grid-template-columns:1fr;}
+    .full{grid-column:span 1;}
+}
+</style>
 </head>
+
 <body>
 
-<canvas id="bg"></canvas>
-
-<nav>
-    <h1 style="cursor:pointer" onclick="goHome()">IOTIFY</h1>
-    <button onclick="goHome()">Home</button>
-</nav>
-
 <section class="register-section">
-    <div class="register-container">
-        <h1 class="hero-title">Event Registration</h1>
-        <p class="sub-text">Build. Connect. Innovate. Complete your team profile below.</p>
+<div class="register-container">
 
-        <form id="registrationForm">
-            <div class="form-grid">
-                <div class="full-width">
-                    <input type="text" name="teamName" placeholder="Enter Team Name" required>
-                </div>
-                
-                <select name="theme" required>
-                    <option value="" disabled selected>Select Competition Theme</option>
-                    <option value="SUS">SUS</option>
-                    <option value="ABC">ABC</option>
-                    <option value="XYX">XYX</option>
-                    <option value="Open Source">Open Source</option>
-                </select>
+<h1>Event Registration</h1>
+<p>Fill your team details</p>
 
-                <select id="teamSize" name="teamSize" required onchange="generateMemberFields()">
-                    <option value="" disabled selected>Select Team Size</option>
-                    <option value="1">Individual (1)</option>
-                    <option value="2">Duo (2 Members)</option>
-                    <option value="3">Trio (3 Members)</option>
-                    <option value="4">Quad (4 Members)</option>
-                    <option value="5">Large (5 Members)</option>
-                </select>
-            </div>
+<form id="form">
 
-            <div id="membersContainer"></div>
+<div class="form-grid">
+<input class="full" name="teamName" placeholder="Team Name" required>
 
-            <button type="submit" id="submitBtn" class="submit-btn">Confirm & Register</button>
-        </form>
-    </div>
+<select name="theme" required>
+<option disabled selected>Select Theme</option>
+<option>SUS</option>
+<option>ABC</option>
+<option>XYZ</option>
+</select>
+
+<select id="size" name="teamSize" required onchange="generate()">
+<option disabled selected>Team Size</option>
+<option value="1">1</option>
+<option value="2">2</option>
+<option value="3">3</option>
+<option value="4">4</option>
+<option value="5">5</option>
+</select>
+</div>
+
+<div id="members"></div>
+
+<button type="submit">Register</button>
+
+</form>
+</div>
 </section>
 
-<script src="script.js"></script>
 <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbwDZCI6yVmw5u4Ajhuqzhs03vg7gXoC_WguH6QHFDVfNkMZKq12M_dyjI_0jDoSvtX4EA/exec';
+const scriptURL = "PASTE_YOUR_WEB_APP_URL_HERE";
 
-    function generateMemberFields() {
-        const size = document.getElementById('teamSize').value;
-        const container = document.getElementById('membersContainer');
-        container.innerHTML = ""; 
+function generate(){
+    const size = document.getElementById("size").value;
+    const container = document.getElementById("members");
+    container.innerHTML="";
 
-        for (let i = 1; i <= size; i++) {
-            const role = (i === 1) ? "Team Leader" : `Member ${i}`;
-            container.innerHTML += `
-                <div class="member-section">
-                    <h3>👤 ${role} Details</h3>
-                    <div class="form-grid">
-                        <input type="text" name="name_${i}" placeholder="Full Name" required>
-                        <input type="text" name="usn_${i}" placeholder="USN" required>
-                        <input type="tel" name="phone_${i}" placeholder="WhatsApp Number" required>
-                        <input type="email" name="email_${i}" placeholder="Email Address" required>
-                        <input type="text" name="branch_${i}" placeholder="Branch (ISE/CSE)" required>
-                        <select name="sem_${i}" required>
-                            <option value="" disabled selected>Semester</option>
-                            <option value="2">2nd Sem</option>
-                            <option value="4">4th Sem</option>
-                            <option value="6">6th Sem</option>
-                            <option value="8">8th Sem</option>
-                        </select>
-                    </div>
-                </div>`;
-        }
+    for(let i=1;i<=size;i++){
+        container.innerHTML += `
+        <div class="member">
+        <h3>${i==1?"Leader":"Member "+i}</h3>
+        <div class="form-grid">
+        <input name="name_${i}" placeholder="Name" required>
+        <input name="usn_${i}" placeholder="USN" required>
+        <input name="phone_${i}" placeholder="Phone" required>
+        <input name="email_${i}" placeholder="Email" required>
+        <input name="branch_${i}" placeholder="Branch" required>
+        <input name="sem_${i}" placeholder="Sem" required>
+        </div>
+        </div>`;
     }
+}
 
-    const form = document.getElementById('registrationForm');
-    const btn = document.getElementById('submitBtn');
+document.getElementById("form").addEventListener("submit", e=>{
+    e.preventDefault();
 
-    form.addEventListener('submit', e => {
-        e.preventDefault();
-        btn.disabled = true;
-        btn.innerText = "Registering...";
-
-        fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: new FormData(form) })
-        .then(() => {
-            alert("Success! Your team has been registered.");
-            window.location.href = "index.html";
-        })
-        .catch(error => {
-            alert("Error: Please check your connection.");
-            btn.disabled = false;
-            btn.innerText = "Confirm & Register";
-        });
+    fetch(scriptURL,{
+        method:"POST",
+        body:new FormData(e.target)
+    })
+    .then(res=>res.text())
+    .then(()=>{
+        alert("✅ Registered Successfully!");
+        location.reload();
+    })
+    .catch(err=>{
+        alert("❌ Error: "+err);
     });
-
-    function goHome() { window.location.href = "index.html"; }
+});
 </script>
+
 </body>
 </html>
