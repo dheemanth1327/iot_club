@@ -160,94 +160,6 @@ function switchCamera(){
     });
 }
 
-// ================= ADMIN LOGIN =================
-function login(){
-
-    const username = document.getElementById("adminUser")?.value;
-    const password = document.getElementById("adminPass")?.value;
-
-    if(username === "admin" && password === "iotify123"){
-        localStorage.setItem("isAdmin", "true");
-        window.location.href = "admin.html";
-    }else{
-        alert("❌ Invalid Login");
-    }
-}
-
-function logout(){
-    localStorage.removeItem("isAdmin");
-    window.location.href = "index.html";
-}
-
-// PROTECT ADMIN PAGE
-if(window.location.pathname.includes("admin.html")){
-    if(localStorage.getItem("isAdmin") !== "true"){
-        window.location.href = "index.html";
-    }
-}
-
-// ================= LOCAL MEMBER STORAGE =================
-function getMembers(){
-    return JSON.parse(localStorage.getItem("members")) || [];
-}
-
-function saveMembers(data){
-    localStorage.setItem("members", JSON.stringify(data));
-}
-
-// ADD MEMBER
-function addMember(){
-
-    const member = {
-        Name: document.getElementById("name").value,
-        ID: document.getElementById("id").value,
-        Event: document.getElementById("event").value,
-        Date: document.getElementById("date").value,
-        Link: document.getElementById("link").value
-    };
-
-    if(!member.Name || !member.ID){
-        alert("⚠ Fill required fields");
-        return;
-    }
-
-    let members = getMembers();
-    members.push(member);
-    saveMembers(members);
-
-    alert("✅ Member Added");
-    loadMembers();
-}
-
-// LOAD MEMBERS
-function loadMembers(){
-
-    const list = document.getElementById("memberList");
-    if(!list) return;
-
-    let members = getMembers();
-    list.innerHTML = "";
-
-    members.forEach((m, index) => {
-        list.innerHTML += `
-            <div class="card">
-                <p><b>${m.Name}</b></p>
-                <p>ID: ${m.ID}</p>
-                <p>${m.Event}</p>
-                <button onclick="deleteMember(${index})">Delete</button>
-            </div>
-        `;
-    });
-}
-
-// DELETE MEMBER
-function deleteMember(index){
-    let members = getMembers();
-    members.splice(index,1);
-    saveMembers(members);
-    loadMembers();
-}
-
 // ================= TYPING EFFECT =================
 let text = "IOTIFY";
 let i = 0;
@@ -317,8 +229,6 @@ window.onload = function(){
 
         draw();
     }
-
-    loadMembers();
 };
 // OPEN SCANNER
 function openScanner(){
@@ -334,3 +244,24 @@ function closeScanner(){
         qrScanner.stop().catch(()=>{});
     }
 }   
+// Existing navigation functions...
+function goToRegister() {
+    window.location.href = "register.html";
+}
+
+// Popup Logic
+function openPopup() {
+    document.getElementById("popup").style.display = "flex";
+}
+
+function closePopup() {
+    document.getElementById("popup").style.display = "none";
+}
+
+// Close popup if user clicks outside the box
+window.onclick = function(event) {
+    const modal = document.getElementById("popup");
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+}
