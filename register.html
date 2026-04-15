@@ -6,7 +6,7 @@
     <title>Registration - IOTIFY</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Standalone Styles to avoid style.css conflicts */
+        /* Standalone Modern Styles */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
         body { background: radial-gradient(circle at top, #0f2027, #0a0a0f 60%); color: white; min-height: 100vh; overflow-x: hidden; }
         canvas { position: fixed; top: 0; left: 0; z-index: -1; }
@@ -20,8 +20,8 @@
         .full-width { grid-column: span 2; }
         input, select { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.5); color: #fff; transition: 0.3s; }
         input:focus { border-color: #00f7ff; box-shadow: 0 0 15px rgba(0,247,255,0.3); outline: none; }
-        .member-section { margin-top: 30px; padding: 25px; border-radius: 20px; background: rgba(0,247,255,0.03); border: 1px solid rgba(0,247,255,0.2); animation: fadeIn 0.5s ease; }
-        .member-section h3 { color: #00f7ff; margin-bottom: 20px; }
+        .member-section { margin-top: 30px; padding: 25px; border-radius: 20px; background: rgba(255,255,255,0.03); border: 1px solid rgba(0, 247, 255, 0.2); animation: fadeIn 0.5s ease; }
+        .member-section h3 { color: #00f7ff; margin-bottom: 20px; text-shadow: 0 0 10px rgba(0, 247, 255, 0.3); }
         .submit-btn { width: 100%; margin-top: 40px; padding: 18px; border-radius: 15px; border: none; background: linear-gradient(45deg, #00f7ff, #8a2be2); color: white; font-size: 18px; font-weight: 600; cursor: pointer; transition: 0.3s; }
         .submit-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(0,247,255,0.5); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -29,17 +29,20 @@
     </style>
 </head>
 <body>
+
 <canvas id="bg"></canvas>
+
 <nav>
     <h1 style="cursor:pointer" onclick="goHome()">IOTIFY</h1>
     <button onclick="goHome()">Home</button>
 </nav>
+
 <section class="register-section">
     <div class="register-container">
         <h1 class="hero-title">Event Registration</h1>
         <form id="registrationForm">
             <div class="form-grid">
-                <input type="text" name="teamName" placeholder="Team Name" required class="full-width">
+                <input type="text" name="teamName" placeholder="Enter Team Name" required class="full-width">
                 <select name="theme" required>
                     <option value="" disabled selected>Competition Theme</option>
                     <option value="SUS">SUS</option>
@@ -48,7 +51,7 @@
                     <option value="Open Source">Open Source</option>
                 </select>
                 <select id="teamSize" name="teamSize" required onchange="generateMemberFields()">
-                    <option value="" disabled selected>Team Size</option>
+                    <option value="" disabled selected>Select Team Size</option>
                     <option value="1">1 Member</option>
                     <option value="2">2 Members</option>
                     <option value="3">3 Members</option>
@@ -57,14 +60,14 @@
                 </select>
             </div>
             <div id="membersContainer"></div>
-            <button type="submit" id="submitBtn" class="submit-btn">Register Team</button>
+            <button type="submit" id="submitBtn" class="submit-btn">Confirm Registration</button>
         </form>
     </div>
 </section>
+
 <script src="script.js"></script>
 <script>
-    // 1. YOUR UPDATED SCRIPT URL
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbyq1Iw7DMND8z-_ByMiuUSNgkUoA2GzXt8IJRgQrHU/dev'; 
+    const scriptURL = 'https://sheetdb.io/api/v1/fd866znaw2q5v'; 
 
     function generateMemberFields() {
         const size = document.getElementById('teamSize').value;
@@ -74,17 +77,17 @@
             const role = (i === 1) ? "Team Leader" : `Member ${i}`;
             container.innerHTML += `
                 <div class="member-section">
-                    <h3>👤 ${role}</h3>
+                    <h3>👤 ${role} Details</h3>
                     <div class="form-grid">
                         <input type="text" name="name_${i}" placeholder="Full Name" required>
                         <input type="text" name="usn_${i}" placeholder="USN" required>
-                        <input type="tel" name="phone_${i}" placeholder="Phone" required>
-                        <input type="email" name="email_${i}" placeholder="Email" required>
+                        <input type="tel" name="phone_${i}" placeholder="Phone Number" required>
+                        <input type="email" name="email_${i}" placeholder="Email Address" required>
                         <input type="text" name="branch_${i}" placeholder="Branch" required>
                         <select name="sem_${i}" required>
-                            <option value="" disabled selected>Sem</option>
-                            <option value="2">2</option><option value="4">4</option>
-                            <option value="6">6</option><option value="8">8</option>
+                            <option value="" disabled selected>Semester</option>
+                            <option value="2">2nd Sem</option><option value="4">4th Sem</option>
+                            <option value="6">6th Sem</option><option value="8">8th Sem</option>
                         </select>
                     </div>
                 </div>`;
@@ -97,18 +100,28 @@
     form.addEventListener('submit', e => {
         e.preventDefault();
         btn.disabled = true;
-        btn.innerText = "Registering...";
+        btn.innerText = "Processing...";
 
-        // mode: 'no-cors' is mandatory for GitHub Pages to Apps Script
-        fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: new FormData(form) })
-        .then(() => {
-            alert("Success! Check your Excel sheet.");
+        const formData = new FormData(form);
+        const data = {};
+        formData.forEach((value, key) => { data[key] = value; });
+        data['Timestamp'] = new Date().toLocaleString(); // Manual timestamp
+
+        fetch(scriptURL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data: [data] }) // SheetDB structure
+        })
+        .then(res => res.json())
+        .then(result => {
+            alert("Registration Successful!");
             window.location.href = "index.html";
         })
         .catch(error => {
-            alert("Error: " + error.message);
+            console.error('Error!', error.message);
+            alert("Submission failed. Please check your connection.");
             btn.disabled = false;
-            btn.innerText = "Register Team";
+            btn.innerText = "Confirm Registration";
         });
     });
 
